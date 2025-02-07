@@ -530,7 +530,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
         checkmarkDiv.className = "checkmark";
         const loader = messageDiv.querySelector(".loader");
         if (loader) {
-          messageDiv.replaceChild(checkmarkDiv, loader);
+          loader.replaceWith(checkmarkDiv);
         }
         const modelDiv = messageDiv.querySelector(".model-name");
         if (modelDiv) {
@@ -549,7 +549,6 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
               planMessageDiv = createMessageContainer("plan", modelName);
             }
             currentPlanMessage += message.message;
-            // Update only the content area with formatted markdown
             planMessageDiv.querySelector(".message-content").innerHTML = formatMarkdown(currentPlanMessage);
             chatContainer.scrollTop = chatContainer.scrollHeight;
             break;
@@ -569,7 +568,6 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
 
           case "code_complete":
             showCompletion(codeMessageDiv);
-            // Reset for the next round
             planMessageDiv = null;
             codeMessageDiv = null;
             currentPlanMessage = "";
