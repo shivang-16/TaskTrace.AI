@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+            font-family: var(--vscode-font-family);
+        }
+        #chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 8px;
+            background: var(--vscode-editor-background);
+        }
+        .message {
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 8px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-message {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-input-border);
+            margin-left: 20%;
+        }
+        .ai-message {
+            background: var(--vscode-editor-selectionBackground);
+            color: var(--vscode-editor-foreground);
+            margin-right: 10%;
+            max-height: 75vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .error-message {
+            color: var(--vscode-errorForeground);
+            border: 1px solid var(--vscode-errorForeground);
+            background: var(--vscode-inputValidation-errorBackground);
+        }
+        .success-message {
+            border-left: 4px solid var(--vscode-testing-iconPassed);
+        }
+        .welcome-message {
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+            padding: 20px;
+        }
+        .welcome-message h2 {
+            color: var(--vscode-editor-foreground);
+            margin-bottom: 10px;
+        }
+        #input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--vscode-input-background);
+            padding: 10px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        #query-input {
+            width: 100%;
+            padding: 8px;
+            min-height: 35px;
+            max-height: 35vh;
+            height: auto;
+            resize: none;
+            overflow-y: auto;
+            border: 1px solid var(--vscode-input-border);
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border-radius: 4px;
+            font-family: var(--vscode-font-family);
+            line-height: 1.4;
+            box-sizing: border-box;
+        }
+
+        #send-button {
+            align-self: flex-end;
+            width: fit-content;
+            padding: 8px 16px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        .loading {
+            color: var(--vscode-descriptionForeground);
+            font-style: italic;
+        }
+        .code-block {
+            position: relative;
+            background: var(--vscode-textCodeBlock-background);
+            padding: 16px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-family: var(--vscode-editor-font-family);
+        }
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .code-block:hover .copy-button {
+            opacity: 1;
+        }
+        .code-snippet-button {
+            background: var(--vscode-textLink-foreground);
+            padding: 4px 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .code-snippet-button:hover {
+            background: var(--vscode-textLink-activeForeground);
+        }
+                /* Scrollbar Styles */
+                ::-webkit-scrollbar {
+                    width: 2px;
+                    height: 2px;
+                }
+        
+                ::-webkit-scrollbar-track {
+                    background: var(--vscode-scrollbarSlider-background);
+                }
+        
+                ::-webkit-scrollbar-thumb {
+                    background: var(--vscode-scrollbarSlider-hoverBackground);
+                    border-radius: 2px;
+                }
+        
+                /* Firefox scrollbar */
+                * {
+                    scrollbar-width: thin;
+                    scrollbar-color: var(--vscode-scrollbarSlider-hoverBackground) var(--vscode-scrollbarSlider-background);
+                }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div class="welcome-message">
+            <h2>Welcome to TaskTrace AI</h2>
+            <p>Your intelligent coding companion. Ask questions about your code or get help with programming tasks.</p>
+        </div>
+    </div>
+    <div id="input-container">
+        <textarea id="query-input" placeholder="Type your query here... (Shift + Enter for new line)"></textarea>
+        <button id="send-button">
+            <span class="codicon codicon-send"></span>
+            Send
+        </button>
+    </div>
+    <script>
+        const vscode = acquireVsCodeApi();
+        const chatContainer = document.getElementById('chat-container');
+        const queryInput = document.getElementById('query-input');
+        const sendButton = document.getElementById('send-button');
+
+        function formatCodeBlock(code, language = '') {
+            return `<div class="code-block">
+                <pre><code class="${language}">${escapeHtml(code)}</code></pre>
+                <button class="copy-button">Copy</button>
+            </div>`;
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function detectCodeBlocks(content) {
+            const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+            let formattedContent = content;
+            let match;
+
+            while ((match = codeBlockRegex.exec(content)) !== null) {
+                const language = match[1] || '';
+                const code = match[2].trim();
+                formattedContent = formattedContent.replace(
+                    match[0],
+                    formatCodeBlock(code, language)
+                );
+            }
+            return formattedContent;
+        }
+
+        function addMessage(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            if (type === 'ai-message') {
+                messageDiv.innerHTML = detectCodeBlocks(content);
+                messageDiv.classList.add('success-message');
+            } else {
+                messageDiv.textContent = content;
+            }
+            
+            if (chatContainer.querySelector('.welcome-message')) {
+                chatContainer.innerHTML = '';
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Add copy functionality to code blocks
+            messageDiv.querySelectorAll('.copy-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const code = button.previousElementSibling.textContent;
+                    navigator.clipboard.writeText(code);
+                    button.textContent = 'Copied!';
+                    setTimeout(() => button.textContent = 'Copy', 2000);
+                });
+            });
+
+            // Add code snippet selection functionality
+            messageDiv.querySelectorAll('.code-block').forEach(block => {
+                block.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('copy-button')) return;
+                    const code = block.querySelector('code').textContent;
+                    queryInput.value = code;
+                });
+            });
+        }
+
+        // Add auto-resize functionality to the input
+        function autoResizeInput() {
+            queryInput.style.height = 'auto';
+            const newHeight = Math.min(queryInput.scrollHeight, window.innerHeight * 0.35);
+            queryInput.style.height = newHeight + 'px';
+        }
+
+        queryInput.addEventListener('input', autoResizeInput);
+        queryInput.addEventListener('paste', () => {
+            setTimeout(autoResizeInput, 0);
+        });
+
+        // Modify the existing keydown event listener
+        queryInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (e.shiftKey) {
+                    setTimeout(autoResizeInput, 0);
+                } else {
+                    e.preventDefault();
+                    sendButton.click();
+                }
+            }
+        });
+
+        // Update the send button click handler
+        sendButton.addEventListener('click', () => {
+            const query = queryInput.value.trim();
+            if (query) {
+                addMessage(query, 'user-message');
+                vscode.postMessage({ command: 'sendQuery', query });
+                queryInput.value = '';
+                queryInput.style.height = '20px'; // Reset to initial height
+            }
+        });
+
+        // Also update the Enter key handler
+        queryInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (e.shiftKey) {
+                    setTimeout(autoResizeInput, 0);
+                } else {
+                    e.preventDefault();
+                    sendButton.click();
+                    queryInput.style.height = '20px'; // Reset to initial height
+                }
+            }
+        });
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.type) {
+                case 'response':
+                    // Check if the message starts with "Error"
+                    if (message.message.startsWith('Error')) {
+                        addMessage(message.message, 'error-message');
+                    } else {
+                        addMessage(message.message, 'ai-message');
+                    }
+                    break;
+                case 'error':
+                    addMessage(message.message, 'error-message');
+                    break;
+                case 'loading':
+                    addMessage('Processing your request...', 'loading');
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
