@@ -1,0 +1,68 @@
+{
+  "name": "tasktrace",
+  "displayName": "TaskTrace AI",
+  "publisher": "Shivang",
+  "description": "",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:tasktrace.chatView",
+    "onCommand:tasktrace.processQuery"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tasktrace.processQuery",
+        "title": "Process Code Query",
+        "category": "TaskTrace AI"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "tasktrace-sidebar",
+          "title": "TaskTrace AI",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "tasktrace-sidebar": [
+        {
+          "type": "webview",
+          "id": "tasktrace.chatView",
+          "name": "AI Chat"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.96.0",
+    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/parser": "^8.22.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.19.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7"
+  }
+}
