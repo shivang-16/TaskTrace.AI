@@ -1,52 +1,51 @@
 # TaskTrace AI
 
-A VS Code extension that uses DeepSeek AI to help you understand, refactor, and optimize your code.
+TaskTrace AI is a powerful Visual Studio Code extension designed to be your intelligent coding companion. It leverages the capabilities of DeepSeek AI to help you understand, refactor, and optimize your code through a structured planning and implementation process.
 
 ## Features
 
-- Process selected code snippets with AI assistance
-- Get explanations, refactoring suggestions, and optimizations
-- Simple and intuitive interface
-- Supports all programming languages
+- **AI-Assisted Code Processing**: Select code snippets and receive AI-generated insights.
+- **Comprehensive Explanations**: Get detailed explanations of complex code segments.
+- **Refactoring Suggestions**: Receive suggestions to improve and refactor your code.
+- **Optimization Tips**: Discover ways to optimize your code for better performance.
+- **Multi-Language Support**: Compatible with all major programming languages.
+- **User-Friendly Interface**: Intuitive and easy-to-use interface for seamless interaction.
+
+## How It Works
+
+TaskTrace AI operates in two distinct phases:
+
+1. **Planning Phase**: The AI analyzes the selected code and provides a strategic plan for improvements.
+2. **Implementation Phase**: Based on the plan, the AI offers specific code changes and optimizations.
 
 ## Usage
 
-1. Select a code snippet in your editor
-2. Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
-3. Type "TaskTrace" and select "TaskTrace: Process Snippet"
-4. Enter your query (e.g., "explain this code", "optimize this", "refactor this")
-5. View the AI-generated response in a new editor window
+1. **Install the Extension**: Add TaskTrace AI to your Visual Studio Code from the marketplace.
+2. **Access the Side Panel**: Once installed, TaskTrace AI will appear in your VS Code side panel.
+3. **Start Using**: Click on the TaskTrace AI icon in the side panel to begin.
 
 ## Requirements
 
-- VS Code 1.60.0 or higher
-- An OpenRouter API key (set in `.env` file)
+- Visual Studio Code version 1.96.0 or higher.
 
-## Extension Settings
+## Open Source and Contributions
 
-This extension requires the following environment variables:
+TaskTrace AI is an open-source project and welcomes contributions from the community. Whether it's bug fixes, feature enhancements, or documentation improvements, your contributions are valuable.
 
-- `OPENROUTER_API_KEY`: Your OpenRouter API key
+- **Repository**: [TaskTrace AI Repository](https://github.com/shivang-16/TaskTrace.AI)
+- **Contribution Guidelines**: Please refer to the repository for contribution guidelines and open issues.
 
 ## Known Issues
 
-None at the moment.
+Currently, there are no known issues.
 
 ## Release Notes
 
 ### 1.0.0
 
-Initial release of TaskTrace AI:
+- Initial release of TaskTrace AI.
+- Basic code processing functionality.
+- Integration with DeepSeek AI through OpenRouter.
+- Support for code explanations, refactoring, and optimization.
 
-- Basic code processing functionality
-- Integration with DeepSeek AI through OpenRouter
-- Support for code explanations, refactoring, and optimization
-
----
-
-## For more information
-
-- [TaskTrace AI Repository](https://github.com/yourusername/tasktrace-ai)
-- [VS Code Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-**Enjoy!**
+**Enjoy coding with TaskTrace AI!**
