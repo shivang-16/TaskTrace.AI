@@ -25,6 +25,7 @@ A VS Code extension that uses DeepSeek AI to help you understand, refactor, and 
 ## Extension Settings
 
 This extension requires the following environment variables:
+
 - `OPENROUTER_API_KEY`: Your OpenRouter API key
 
 ## Known Issues
@@ -36,6 +37,7 @@ None at the moment.
 ### 1.0.0
 
 Initial release of TaskTrace AI:
+
 - Basic code processing functionality
 - Integration with DeepSeek AI through OpenRouter
 - Support for code explanations, refactoring, and optimization
@@ -44,7 +46,7 @@ Initial release of TaskTrace AI:
 
 ## For more information
 
-* [TaskTrace AI Repository](https://github.com/yourusername/tasktrace-ai)
-* [VS Code Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+- [TaskTrace AI Repository](https://github.com/yourusername/tasktrace-ai)
+- [VS Code Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
 
 **Enjoy!**
