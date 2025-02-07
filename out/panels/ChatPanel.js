@@ -1,90 +1,107 @@
-import * as vscode from 'vscode';
-
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ChatPanel = void 0;
+const vscode = __importStar(require("vscode"));
 /**
  * @deprecated This panel implementation is deprecated in favor of the sidebar ChatViewProvider.
  * This class may be removed in a future version. Please use the sidebar chat interface instead.
  */
-export class ChatPanel {
-    public static currentPanel: ChatPanel | undefined;
-    private readonly _panel: vscode.WebviewPanel;
-    private _disposables: vscode.Disposable[] = [];
-
-    private constructor(panel: vscode.WebviewPanel) {
+class ChatPanel {
+    static currentPanel;
+    _panel;
+    _disposables = [];
+    constructor(panel) {
         this._panel = panel;
         this._panel.webview.html = this._getWebviewContent();
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-        this._panel.webview.onDidReceiveMessage(
-            async message => {
-                switch (message.command) {
-                    case 'sendQuery':
-                        const editor = vscode.window.activeTextEditor;
-                        if (!editor) {
-                            this._panel.webview.postMessage({ 
-                                type: 'error', 
-                                message: 'No active editor found' 
-                            });
-                            return;
-                        }
-                        const selection = editor.selection;
-                        const code = editor.document.getText(selection);
-                        if (!code) {
-                            this._panel.webview.postMessage({ 
-                                type: 'error', 
-                                message: 'Please select code first' 
-                            });
-                            return;
-                        }
-                        try {
-                            this._panel.webview.postMessage({ type: 'loading' });
-                            const response = await vscode.commands.executeCommand(
-                                'tasktrace.processQuery',
-                                code,
-                                message.query
-                            );
-                            this._panel.webview.postMessage({ 
-                                type: 'response', 
-                                message: response 
-                            });
-                        } catch (error) {
-                            this._panel.webview.postMessage({ 
-                                type: 'error', 
-                                message: 'Failed to process query' 
-                            });
-                        }
-                        break;
-                }
-            },
-            null,
-            this._disposables
-        );
+        this._panel.webview.onDidReceiveMessage(async (message) => {
+            switch (message.command) {
+                case 'sendQuery':
+                    const editor = vscode.window.activeTextEditor;
+                    if (!editor) {
+                        this._panel.webview.postMessage({
+                            type: 'error',
+                            message: 'No active editor found'
+                        });
+                        return;
+                    }
+                    const selection = editor.selection;
+                    const code = editor.document.getText(selection);
+                    if (!code) {
+                        this._panel.webview.postMessage({
+                            type: 'error',
+                            message: 'Please select code first'
+                        });
+                        return;
+                    }
+                    try {
+                        this._panel.webview.postMessage({ type: 'loading' });
+                        const response = await vscode.commands.executeCommand('tasktrace.processQuery', code, message.query);
+                        this._panel.webview.postMessage({
+                            type: 'response',
+                            message: response
+                        });
+                    }
+                    catch (error) {
+                        this._panel.webview.postMessage({
+                            type: 'error',
+                            message: 'Failed to process query'
+                        });
+                    }
+                    break;
+            }
+        }, null, this._disposables);
     }
-
     /**
      * @deprecated Please use the sidebar chat interface instead of this floating panel.
      * This method is maintained for backward compatibility but will be removed in a future version.
      */
-    public static render() {
+    static render() {
         // Show deprecation warning to users
         vscode.window.showWarningMessage('This chat panel is deprecated. Please use the sidebar chat interface for better experience.');
-        
         if (ChatPanel.currentPanel) {
             ChatPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
             return;
         }
-
-        const panel = vscode.window.createWebviewPanel(
-            'tasktraceChat',
-            'TaskTrace AI Chat',
-            vscode.ViewColumn.Two,
-            {
-                enableScripts: true
-            }
-        );
-
+        const panel = vscode.window.createWebviewPanel('tasktraceChat', 'TaskTrace AI Chat', vscode.ViewColumn.Two, {
+            enableScripts: true
+        });
         ChatPanel.currentPanel = new ChatPanel(panel);
     }
-
-    private _getWebviewContent() {
+    _getWebviewContent() {
         return `
             <!DOCTYPE html>
             <html>
@@ -203,9 +220,8 @@ export class ChatPanel {
             </html>
         `;
     }
-
     // TODO: This entire class will be removed once the migration to ChatViewProvider is complete
-    private dispose() {
+    dispose() {
         ChatPanel.currentPanel = undefined;
         this._panel.dispose();
         while (this._disposables.length) {
@@ -216,3 +232,5 @@ export class ChatPanel {
         }
     }
 }
+exports.ChatPanel = ChatPanel;
+//# sourceMappingURL=ChatPanel.js.map
