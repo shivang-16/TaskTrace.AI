@@ -1,40 +1,37 @@
 import * as vscode from 'vscode';
-import axios from 'axios';
 import * as dotenv from "dotenv";
 import { ChatViewProvider } from './providers/ChatViewProvider';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
-//9QehsnZ1I03qQd9q6iJ9oO7LXxtUgPqCygl2mCKsNHTyu1Mvl4sGJQQJ99BBACAAAAAAAAAAAAASAZDO1CFs
-// Function to call DeepSeek API through OpenRouter
-async function callDeepSeekAPI(codeSnippet: string, query: string): Promise<string> {
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+/**
+ * Calls the Gemini AI API with the given code snippet and query
+ * @param codeSnippet Optional code snippet from editor selection. Can be empty if no code is selected.
+ * @param query User's query text
+ * @returns Response from Gemini AI
+ * y
+ * Note: To include code in your query, select the relevant code in your active editor before sending.
+ * If no code is selected, only the query text will be processed.
+ */
+async function callGeminiAPI(codeSnippet: string, query: string): Promise<string> {
     try {
-        console.log("Processing query...");
-        const response = await axios.post(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            model: "deepseek/deepseek-r1:free",
-            messages: [
-              {
-                role: "user",
-                content: `Code: ${codeSnippet}\nQuery: ${query}`,
-              },
-            ],
-          },
-          {
-            headers: {
-              Authorization: `Bearer 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`,
-              "HTTP-Referer": "vscode-extension",
-              "X-Title": "TaskTrace AI",
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        console.log("Response received:", response.data);
-        return response.data.choices[0].message.content;
-      } catch (error) {
-        console.error("Error calling the API:", (error as Error).message);
-        return "Error processing request.";
-      }
+        console.log("Processing query with Gemini API...");
+        console.log(`Query length: ${query.length}, Code snippet length: ${codeSnippet.length}`);
+        const prompt = `Code: ${codeSnippet}\nQuery: ${query}`;
+        const result = await model.generateContent(prompt);
+        const response = result.response.text();
+        console.log("Response received from Gemini");
+        return response;
+    } catch (error) {
+        const errorMessage = (error as Error).message;
+        console.error("Error calling Gemini API:", errorMessage);
+        return `Error processing request: ${errorMessage}. Please ensure your query is clear and try again.`;
+    }
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -48,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Register the process query command
     let processCommand = vscode.commands.registerCommand('tasktrace.processQuery', 
         async (code: string, query: string) => {
-            return await callDeepSeekAPI(code, query);
+            return await callGeminiAPI(code, query);
     });
 
     context.subscriptions.push(chatView, processCommand);

@@ -34,14 +34,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         });
                         return;
                     }
+                    // Code snippet selection is optional. If no code is selected, 
+                    // an empty string will be used for the query
                     const selection = editor.selection;
                     const code = editor.document.getText(selection);
                     if (!code) {
-                        webviewView.webview.postMessage({ 
-                            type: 'error', 
-                            message: 'Please select code first' 
-                        });
-                        return;
+                        console.log('No code snippet selected, proceeding with empty code');
                     }
                     try {
                         webviewView.webview.postMessage({ type: 'loading' });
@@ -55,9 +53,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                             message: response 
                         });
                     } catch (error) {
+                        console.error('Error processing query:', error);
                         webviewView.webview.postMessage({ 
                             type: 'error', 
-                            message: 'Failed to process query' 
+                            message: 'Failed to process query. Please verify your API key, network connection, and ensure proper query format.' 
                         });
                     }
                     break;
