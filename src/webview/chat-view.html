@@ -122,6 +122,7 @@
         margin: 8px 0;
         border-radius: 6px;
         font-family: var(--vscode-editor-font-family);
+        overflow-x: auto;
       }
       .code-block pre {
         margin: 0;
@@ -131,8 +132,9 @@
         font-family: var(--vscode-editor-font-family);
         font-size: 13px;
         line-height: 1.4;
+        display: block;
+        white-space: pre-wrap;
       }
-
       .language-label {
         position: absolute;
         top: 4px;
@@ -190,12 +192,13 @@
       }
 
       ::-webkit-scrollbar-track {
-        background: var(--vscode-scrollbarSlider-background);
+        background: transparent; /* Make the track transparent */
       }
 
       ::-webkit-scrollbar-thumb {
         background: var(--vscode-scrollbarSlider-hoverBackground);
         border-radius: 2px;
+        width: 2px; /* Make the thumb very thin */
       }
 
       /* Firefox scrollbar */
@@ -253,6 +256,40 @@
         outline: none;
         border-color: var(--vscode-focusBorder);
       }
+
+      .loader {
+    border: 2px solid var(--vscode-editor-background);
+    border-top: 2px solid yellow;
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .checkmark {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: green;
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2l-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4-6.7 6.7z"/></svg>') no-repeat center;
+    mask-size: contain;
+    vertical-align: middle;
+  }
+
+  .model-name {
+    margin-left: 8px;
+    font-size: 10px;
+    color: var(--vscode-descriptionForeground);
+    display: inline-block;
+    vertical-align: middle;
+  }
     </style>
     <script>
       const vscode = acquireVsCodeApi();
@@ -294,17 +331,17 @@
       }
 
       function formatMarkdown(content) {
-          // Configure marked options
-          marked.setOptions({
-              highlight: function(code, lang) {
-                  if (Prism.languages[lang]) {
-                      return Prism.highlight(code, Prism.languages[lang], lang);
-                  }
-                  return code;
-              }
-          });
-      
-          return marked(content);
+        // Configure marked options
+        marked.setOptions({
+          highlight: function(code, lang) {
+            if (Prism.languages[lang]) {
+              return Prism.highlight(code, Prism.languages[lang], lang);
+            }
+            return code;
+          }
+        });
+
+        return marked(content);
       }
 
       function addMessage(content, type) {
@@ -335,21 +372,22 @@
       // Add copy functionality to code blocks
       messageDiv.querySelectorAll(".copy-button").forEach((button) => {
           button.addEventListener("click", () => {
-              const code = button.previousElementSibling.querySelector("code").textContent;
-              navigator.clipboard.writeText(code);
-              button.textContent = "Copied!";
-              setTimeout(() => (button.textContent = "Copy"), 2000);
+            const code = button.previousElementSibling.querySelector("code").textContent;
+            navigator.clipboard.writeText(code);
+            button.textContent = "Copied!";
+            setTimeout(() => (button.textContent = "Copy"), 2000);
           });
-      });
+        });
+
       
       // Add code snippet selection functionality
       messageDiv.querySelectorAll(".code-block").forEach((block) => {
           block.addEventListener("click", (e) => {
-              if (e.target.classList.contains("copy-button")) return;
-              const code = block.querySelector("code").textContent;
-              queryInput.value = code;
+            if (e.target.classList.contains("copy-button")) return;
+            const code = block.querySelector("code").textContent;
+            queryInput.value = code;
           });
-      });
+        });
       }
 
       // Add auto-resize functionality to the input
@@ -381,14 +419,16 @@
 
       // Update the send button click handler
       sendButton.addEventListener("click", () => {
-        const query = queryInput.value.trim();
-        if (query) {
-          addMessage(query, "user-message");
-          vscode.postMessage({ command: "sendQuery", query });
-          queryInput.value = "";
-          queryInput.style.height = "20px"; // Reset to initial height
-        }
-      });
+    const query = queryInput.value.trim();
+    const modelName = document.getElementById("model-select").value;
+    if (query) {
+      addMessage(query, "user-message");
+      // const loadingMessage = showLoader(modelName);
+      vscode.postMessage({ command: "sendQuery", query, model: modelName });
+      queryInput.value = "";
+      queryInput.style.height = "20px"; // Reset to initial height
+    }
+  });
 
       // Also update the Enter key handler
       queryInput.addEventListener("keydown", (e) => {
@@ -407,20 +447,44 @@
       let currentMessage = '';
       let messageDiv = null;
 
+      function showLoader(modelName) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message ai-message";
+    
+        const loaderDiv = document.createElement("div");
+        loaderDiv.className = "loader";
+    
+        const modelDiv = document.createElement("div");
+        modelDiv.className = "model-name";
+        modelDiv.textContent = `Generating response with ${modelName}...`;
+    
+        messageDiv.appendChild(loaderDiv);
+        messageDiv.appendChild(modelDiv);
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        return messageDiv;
+      }
+
+      function showCompletion(messageDiv) {
+        const checkmarkDiv = document.createElement("div");
+        checkmarkDiv.className = "checkmark";
+        messageDiv.replaceChild(checkmarkDiv, messageDiv.querySelector(".loader"));
+        messageDiv.querySelector(".model-name").textContent = "Response generated";
+      }
+
       window.addEventListener("message", (event) => {
         const message = event.data;
         switch (message.type) {
           case "chunk":
             if (!messageDiv) {
-              messageDiv = document.createElement("div");
-              messageDiv.className = "message ai-message";
-              chatContainer.appendChild(messageDiv);
+              messageDiv = showLoader(document.getElementById("model-select").value);
             }
             currentMessage += message.message;
             messageDiv.innerHTML = detectCodeBlocks(currentMessage);
             chatContainer.scrollTop = chatContainer.scrollHeight;
             break;
           case "complete":
+            showCompletion(messageDiv);
             messageDiv = null;
             currentMessage = '';
             break;
@@ -430,7 +494,8 @@
             currentMessage = '';
             break;
           case "loading":
-            addMessage("Processing your request...", "loading");
+            const modelName = document.getElementById("model-select").value;
+            messageDiv = showLoader(modelName);
             break;
         }
       });
