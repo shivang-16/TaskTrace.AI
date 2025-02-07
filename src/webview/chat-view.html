@@ -20,6 +20,145 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 
    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 8px;
+        padding: 20px;
+        width: 80%;
+        max-width: 500px;
+        z-index: 1000;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--vscode-editor-foreground);
+        cursor: pointer;
+        font-size: 18px;
+      }
+
+      .file-search {
+        width: 100%;
+        padding: 6px;
+        margin-bottom: 10px;
+        border: 1px solid var(--vscode-input-border);
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border-radius: 4px;
+      }
+
+      .file-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+      }
+
+      .file-item {
+        padding: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .file-item:hover {
+        background: var(--vscode-list-hoverBackground);
+      }
+
+      .file-item.selected {
+        background: var(--vscode-list-activeSelectionBackground);
+        color: var(--vscode-list-activeSelectionForeground);
+      }
+
+      .selected-files {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .file-chip {
+        background: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 4px 8px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+      }
+
+      .file-chip .remove {
+        cursor: pointer;
+        opacity: 0.7;
+      }
+
+      .file-chip .remove:hover {
+        opacity: 1;
+      }
+
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      .files-selection-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .add-files-button {
+        align-self: flex-start;
+        width: 28px;
+        height: 28px;
+        padding: 3px;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        padding: 0;
+        flex-shrink: 0;
+      }
+
+      .add-files-button:hover {
+        background: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .selected-files {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        flex-grow: 1;
+      }
+
       body {
         padding: 15px;
         display: flex;
@@ -111,7 +250,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
         resize: none;
         overflow-y: auto;
         border: 1px solid var(--vscode-input-border);
-        background: var(--vscode-input-background);
+        background: transparent;
         color: var(--vscode-input-foreground);
         border-radius: 4px;
         font-family: var(--vscode-font-family);
@@ -337,9 +476,14 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
     <div id="input-container">
       <textarea
         id="query-input"
-        placeholder="Type your query here... (Shift + Enter for new line)"
+        placeholder="Type your query here..."
       ></textarea>
+     
       <div class="button-container">
+       
+          <button class="add-files-button">+</button>
+          <div class="selected-files"></div>
+        
         <select id="model-select" class="model-selector">
           <option value="gemini-1.5-pro">Gemini 1.5 Flash</option>
           <option value="deepseek-r1">DeepSeek R1</option>
@@ -351,12 +495,104 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
       </div>
     </div>
 
+    <div class="modal-overlay"></div>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Select Files</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <input type="text" class="file-search" placeholder="Search files...">
+      <div class="file-list"></div>
+    </div>
+
     <script>
       const vscode = acquireVsCodeApi();
       const chatContainer = document.getElementById("chat-container");
       const queryInput = document.getElementById("query-input");
       const sendButton = document.getElementById("send-button");
       const newChatButton = document.getElementById("new-chat-button");
+      
+      // File selection related elements
+      const addFilesButton = document.querySelector('.add-files-button');
+      const modal = document.querySelector('.modal');
+      const modalOverlay = document.querySelector('.modal-overlay');
+      const modalClose = document.querySelector('.modal-close');
+      const fileSearch = document.querySelector('.file-search');
+      const fileList = document.querySelector('.file-list');
+      const selectedFilesContainer = document.querySelector('.selected-files');
+      
+      let selectedFiles = [];
+      let allFiles = [];
+
+      // Toggle modal
+      function toggleModal() {
+        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+        modalOverlay.style.display = modalOverlay.style.display === 'block' ? 'none' : 'block';
+        if (modal.style.display === 'block') {
+          vscode.postMessage({ command: 'fetchRecentFiles' });
+        }
+      }
+
+      // Add event listeners for modal
+      addFilesButton.addEventListener('click', async () => {
+        toggleModal();
+        const files = await vscode.postMessage({ command: 'fetchRecentFiles' });
+        renderFileList(files);
+      });
+
+      // Filter files based on search input
+      fileSearch.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        renderFileList(allFiles.filter(file => 
+          file.toLowerCase().includes(searchTerm)
+        ));
+      });
+
+      // Render file list
+      function renderFileList(files) {
+        fileList.innerHTML = files.map(file => `
+          <div class="file-item ${selectedFiles.includes(file) ? 'selected' : ''}" 
+               data-file="${file}">
+            <span class="codicon codicon-file"></span>
+            ${file}
+          </div>
+        `).join('');
+
+        // Add click handlers
+        fileList.querySelectorAll('.file-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const file = item.dataset.file;
+            if (selectedFiles.includes(file)) {
+              selectedFiles = selectedFiles.filter(f => f !== file);
+              item.classList.remove('selected');
+            } else if (selectedFiles.length < 5) {
+              selectedFiles.push(file);
+              item.classList.add('selected');
+            }
+            renderSelectedFiles();
+          });
+        });
+      }
+
+      // Render selected file chips
+      function renderSelectedFiles() {
+        selectedFilesContainer.innerHTML = selectedFiles.map(file => `
+          <div class="file-chip">
+            <span>${file.split('/').pop()}</span>
+            <span class="remove" data-file="${file}">&times;</span>
+          </div>
+        `).join('');
+
+        // Add remove handlers
+        selectedFilesContainer.querySelectorAll('.remove').forEach(remove => {
+          remove.addEventListener('click', (e) => {
+            const file = e.target.dataset.file;
+            selectedFiles = selectedFiles.filter(f => f !== file);
+            renderSelectedFiles();
+            renderFileList(allFiles);
+          });
+        });
+      }
 
       // Function to reset the chat view
       function resetChatView() {
@@ -536,12 +772,19 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
       });
 
       // Send button handler
+      // Note: Queries can be sent with or without code snippets selected
+      // The extension will handle both general questions and code-specific queries
       sendButton.addEventListener("click", () => {
         const query = queryInput.value.trim();
         const modelName = document.getElementById("model-select").value;
         if (query) {
           addMessage(query, "user-message");
-          vscode.postMessage({ command: "sendQuery", query, model: modelName });
+          vscode.postMessage({ 
+            command: "sendQuery", 
+            query, 
+            model: modelName,
+            selectedFiles: selectedFiles 
+          });
           queryInput.value = "";
           queryInput.style.height = "20px"; // Reset height
         }
@@ -576,6 +819,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
       }
 
       // Listen for messages from the extension host
+      // Handles both code-specific and general query responses through the same message flow
       window.addEventListener("message", (event) => {
         const message = event.data;
         const modelName = document.getElementById("model-select").value;

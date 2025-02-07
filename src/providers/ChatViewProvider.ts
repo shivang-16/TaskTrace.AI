@@ -32,17 +32,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     // - 'error': Error messages
     webviewView.webview.onDidReceiveMessage(async (message) => {
       switch (message.command) {
-        case "sendQuery":
-          const editor = vscode.window.activeTextEditor;
-          if (!editor) {
+        case "fetchRecentFiles":
+          try {
+            const files = await vscode.commands.executeCommand("tasktrace.getRecentFiles");
+            webviewView.webview.postMessage({
+              type: "recentFiles",
+              files: files
+            });
+          } catch (error) {
+            console.error("Error fetching recent files:", error);
             webviewView.webview.postMessage({
               type: "error",
-              message: "No active editor found",
+              message: "Failed to fetch recent files"
             });
-            return;
           }
-          const selection = editor.selection;
-          const code = editor.document.getText(selection);
+          break;
+
+        case "sendQuery":
+          const editor = vscode.window.activeTextEditor;
+          const code = editor ? editor.document.getText(editor.selection) : "";
           try {
             // Initiate loading state before two-phase response begins
             webviewView.webview.postMessage({ type: "loading" });
@@ -50,7 +58,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
               "tasktrace.processQuery",
               code,
               message.query,
-              message.model // Make sure this is being passed from the webview
+              message.model,
+              message.selectedFiles // Pass selected files to the command
             );
           } catch (error) {
             console.error("Error processing query:", error);

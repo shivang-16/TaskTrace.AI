@@ -18,7 +18,8 @@
   ],
   "activationEvents": [
     "onView:tasktrace.chatView",
-    "onCommand:tasktrace.processQuery"
+    "onCommand:tasktrace.processQuery",
+    "onCommand:tasktrace.getRecentFiles"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -26,6 +27,11 @@
       {
         "command": "tasktrace.processQuery",
         "title": "Process Code Query",
+        "category": "TaskTrace AI"
+      },
+      {
+        "command": "tasktrace.getRecentFiles",
+        "title": "Get Recent Files",
         "category": "TaskTrace AI"
       }
     ],
