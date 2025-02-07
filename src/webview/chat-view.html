@@ -1,11 +1,25 @@
 <!doctype html>
 <html>
   <head>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.12/marked.min.js"></script>
-    <style>
+   <!-- Highlight.js CSS (choose your preferred theme) -->
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css"
+/>
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+   <style>
       body {
         padding: 15px;
         display: flex;
@@ -29,14 +43,8 @@
         animation: fadeIn 0.3s ease-in;
       }
       @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
       }
       .user-message {
         background: var(--vscode-editor-background);
@@ -77,7 +85,6 @@
         border-radius: 8px;
         position: relative;
       }
-
       #query-input {
         width: 100%;
         padding: 8px;
@@ -94,7 +101,6 @@
         line-height: 1.4;
         box-sizing: border-box;
       }
-
       #send-button {
         align-self: flex-end;
         width: fit-content;
@@ -143,18 +149,15 @@
         color: var(--vscode-descriptionForeground);
         opacity: 0.7;
       }
-
       /* Markdown text styles */
       .markdown-content strong {
         color: var(--vscode-editor-foreground);
         font-weight: 600;
       }
-
       .markdown-content em {
         font-style: italic;
         color: var(--vscode-textPreformat-foreground);
       }
-
       .markdown-content code:not(pre code) {
         background: var(--vscode-textCodeBlock-background);
         padding: 2px 4px;
@@ -190,22 +193,114 @@
         width: 2px;
         height: 2px;
       }
-
       ::-webkit-scrollbar-track {
-        background: transparent; /* Make the track transparent */
+        background: transparent;
       }
-
       ::-webkit-scrollbar-thumb {
         background: var(--vscode-scrollbarSlider-hoverBackground);
         border-radius: 2px;
-        width: 2px; /* Make the thumb very thin */
+        width: 2px;
       }
-
-      /* Firefox scrollbar */
       * {
         scrollbar-width: thin;
-        scrollbar-color: var(--vscode-scrollbarSlider-hoverBackground)
-          var(--vscode-scrollbarSlider-background);
+        scrollbar-color: var(--vscode-scrollbarSlider-hoverBackground) var(--vscode-scrollbarSlider-background);
+      }
+      /* Additional styles for plan/code phases */
+      .button-container {
+        display: flex;
+        gap: 8px;
+        align-self: flex-end;
+      }
+      .model-selector {
+        padding: 6px 10px;
+        border-radius: 4px;
+        background: var(--vscode-dropdown-background);
+        color: var(--vscode-dropdown-foreground);
+        border: 1px solid var(--vscode-dropdown-border);
+        cursor: pointer;
+      }
+      .model-selector:focus {
+        outline: none;
+        border-color: var(--vscode-focusBorder);
+      }
+      .plan-message {
+        background: var(--vscode-editor-selectionBackground);
+        border-left: 4px solid var(--vscode-charts-blue);
+        margin-bottom: 20px;
+      }
+      .code-message {
+        background: var(--vscode-editor-selectionBackground);
+        border-left: 4px solid var(--vscode-charts-green);
+      }
+      .thread-connector {
+        width: 2px;
+        height: 20px;
+        background: var(--vscode-charts-blue);
+        margin-left: 20px;
+        margin-bottom: 10px;
+      }
+      .phase-label {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 8px;
+        padding-left: 8px;
+        border-left: 2px solid var(--vscode-charts-blue);
+      }
+      .loader {
+        border: 2px solid var(--vscode-editor-background);
+        border-top: 2px solid var(--vscode-progressBar-background);
+        border-radius: 50%;
+        width: 12px;
+        height: 12px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      .message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 4px 8px;
+        background: var(--vscode-editor-background);
+        border-radius: 4px;
+      }
+      .status-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .inline-code {
+        background: var(--vscode-textCodeBlock-background);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: var(--vscode-editor-font-family);
+        font-size: 0.9em;
+      }
+      .message-content {
+        padding: 8px;
+        overflow-x: auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .checkmark {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        background-color: green;
+        mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2l-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4-6.7 6.7z"/></svg>') no-repeat center;
+        mask-size: contain;
+        vertical-align: middle;
+      }
+      .model-name {
+        margin-left: 8px;
+        font-size: 10px;
+        color: var(--vscode-descriptionForeground);
+        display: inline-block;
+        vertical-align: middle;
       }
     </style>
   </head>
@@ -214,8 +309,7 @@
       <div class="welcome-message">
         <h2>Welcome to TaskTrace AI</h2>
         <p>
-          Your intelligent coding companion. Ask questions about your code or
-          get help with programming tasks.
+          Your intelligent coding companion. Ask questions about your code or get help with programming tasks.
         </p>
       </div>
     </div>
@@ -236,75 +330,15 @@
       </div>
     </div>
 
-    <style>
-      .button-container {
-        display: flex;
-        gap: 8px;
-        align-self: flex-end;
-      }
-
-      .model-selector {
-        padding: 6px 10px;
-        border-radius: 4px;
-        background: var(--vscode-dropdown-background);
-        color: var(--vscode-dropdown-foreground);
-        border: 1px solid var(--vscode-dropdown-border);
-        cursor: pointer;
-      }
-
-      .model-selector:focus {
-        outline: none;
-        border-color: var(--vscode-focusBorder);
-      }
-
-      .loader {
-    border: 2px solid var(--vscode-editor-background);
-    border-top: 2px solid yellow;
-    border-radius: 50%;
-    width: 10px;
-    height: 10px;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .checkmark {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background-color: green;
-    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2l-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4-6.7 6.7z"/></svg>') no-repeat center;
-    mask-size: contain;
-    vertical-align: middle;
-  }
-
-  .model-name {
-    margin-left: 8px;
-    font-size: 10px;
-    color: var(--vscode-descriptionForeground);
-    display: inline-block;
-    vertical-align: middle;
-  }
-    </style>
     <script>
       const vscode = acquireVsCodeApi();
       const chatContainer = document.getElementById("chat-container");
       const queryInput = document.getElementById("query-input");
       const sendButton = document.getElementById("send-button");
 
-      function formatCodeBlock(code, language = "") {
-        return `<div class="code-block">
-                <span class="language-label">${language}</span>
-                <pre><code class="language-${language}">${escapeHtml(code)}</code></pre>
-                <button class="copy-button">Copy</button>
-            </div>`;
-      }
+      // --- Helper Functions ---
 
+      // Escape HTML for safe insertion
       function escapeHtml(text) {
         return text
           .replace(/&/g, "&amp;")
@@ -314,63 +348,118 @@
           .replace(/'/g, "&#039;");
       }
 
-      function detectCodeBlocks(content) {
-        const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
-        let formattedContent = content;
-        let match;
-
-        while ((match = codeBlockRegex.exec(content)) !== null) {
-          const language = match[1] || "";
-          const code = match[2].trim();
-          formattedContent = formattedContent.replace(
-            match[0],
-            formatCodeBlock(code, language),
-          );
-        }
-        return formattedContent;
+      // Custom rendering for code blocks with a copy button
+      function formatCodeBlock(code, language = "") {
+        const languageClass = language ? `language-${language}` : "";
+        return `<div class="code-block">
+                  <span class="language-label">${language || "text"}</span>
+                  <pre><code class="${languageClass}">${escapeHtml(code)}</code></pre>
+                  <button class="copy-button" title="Copy code">
+                    <span class="codicon codicon-copy"></span>
+                  </button>
+                </div>`;
       }
 
-      function formatMarkdown(content) {
-        // Configure marked options
-        marked.setOptions({
-          highlight: function(code, lang) {
-            if (Prism.languages[lang]) {
-              return Prism.highlight(code, Prism.languages[lang], lang);
-            }
-            return code;
+      // --- Global Marked Configuration ---
+      // Create a renderer and set our custom rules
+      const renderer = new marked.Renderer();
+      renderer.code = (code, language) => formatCodeBlock(code, language);
+      renderer.codespan = (code) =>
+        `<code class="inline-code">${escapeHtml(code)}</code>`;
+
+      // Set the options for marked only once
+      marked.setOptions({
+        highlight: function(code, lang) {
+          if (lang && hljs.getLanguage(lang)) {
+            // Use the specified language if available
+            return hljs.highlight(code, { language: lang }).value;
           }
-        });
+          // Otherwise, let highlight.js auto-detect the language
+          return hljs.highlightAuto(code).value;
+        },
+        gfm: true,
+        breaks: true,
+        headerIds: false,
+        mangle: false,
+      });
 
-        return marked(content);
+      // Use marked to convert markdown to HTML
+      function formatMarkdown(content) {
+        return marked.parse(content)
       }
 
+      // Create a message container for a given phase (plan or code)
+      function createMessageContainer(type, modelName) {
+        const container = document.createElement("div");
+        container.className = `message ai-message ${type}-message`;
+
+        // Header section (phase label, loader, and model name)
+        const header = document.createElement("div");
+        header.className = "message-header";
+
+        const phaseLabel = document.createElement("div");
+        phaseLabel.className = "phase-label";
+        const phaseIcon = type === "plan" ? "🤔" : "⚙️";
+        phaseLabel.innerHTML = phaseIcon + " " + (type === "plan" ? "Planning Phase" : "Implementation Phase");
+        header.appendChild(phaseLabel);
+
+        const statusContainer = document.createElement("div");
+        statusContainer.className = "status-container";
+
+        const loaderDiv = document.createElement("div");
+        loaderDiv.className = "loader";
+        statusContainer.appendChild(loaderDiv);
+
+        const modelDiv = document.createElement("div");
+        modelDiv.className = "model-name";
+        modelDiv.textContent = modelName;
+        statusContainer.appendChild(modelDiv);
+
+        header.appendChild(statusContainer);
+        container.appendChild(header);
+
+        // Content area for markdown text
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "message-content markdown-content";
+        container.appendChild(contentDiv);
+
+        // If this is a code phase and a plan exists, add a visual connector.
+        if (type === "code" && planMessageDiv) {
+          const connector = document.createElement("div");
+          connector.className = "thread-connector";
+          chatContainer.appendChild(connector);
+        }
+
+        chatContainer.appendChild(container);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        return container;
+      }
+
+      // Add a regular message (user query or error)
       function addMessage(content, type) {
         const messageDiv = document.createElement("div");
         messageDiv.className = `message ${type}`;
-      
+
         if (type === "ai-message") {
-          // Process markdown and code blocks
           const formattedContent = formatMarkdown(content);
           messageDiv.innerHTML = formattedContent;
           messageDiv.classList.add("success-message", "markdown-content");
-          
-          // Highlight all code blocks
-          messageDiv.querySelectorAll('pre code').forEach((block) => {
-              Prism.highlightElement(block);
+
+          messageDiv.querySelectorAll("pre code").forEach((block) => {
+            Prism.highlightElement(block);
           });
-      } else {
+        } else {
           messageDiv.textContent = content;
-      }
-      
-      if (chatContainer.querySelector(".welcome-message")) {
+        }
+
+        if (chatContainer.querySelector(".welcome-message")) {
           chatContainer.innerHTML = "";
-      }
-      
-      chatContainer.appendChild(messageDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-      
-      // Add copy functionality to code blocks
-      messageDiv.querySelectorAll(".copy-button").forEach((button) => {
+        }
+
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        messageDiv.querySelectorAll(".copy-button").forEach((button) => {
           button.addEventListener("click", () => {
             const code = button.previousElementSibling.querySelector("code").textContent;
             navigator.clipboard.writeText(code);
@@ -379,9 +468,7 @@
           });
         });
 
-      
-      // Add code snippet selection functionality
-      messageDiv.querySelectorAll(".code-block").forEach((block) => {
+        messageDiv.querySelectorAll(".code-block").forEach((block) => {
           block.addEventListener("click", (e) => {
             if (e.target.classList.contains("copy-button")) return;
             const code = block.querySelector("code").textContent;
@@ -390,22 +477,16 @@
         });
       }
 
-      // Add auto-resize functionality to the input
+      // Auto-resize the query input
       function autoResizeInput() {
         queryInput.style.height = "auto";
-        const newHeight = Math.min(
-          queryInput.scrollHeight,
-          window.innerHeight * 0.35,
-        );
+        const newHeight = Math.min(queryInput.scrollHeight, window.innerHeight * 0.35);
         queryInput.style.height = newHeight + "px";
       }
-
       queryInput.addEventListener("input", autoResizeInput);
       queryInput.addEventListener("paste", () => {
         setTimeout(autoResizeInput, 0);
       });
-
-      // Modify the existing keydown event listener
       queryInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           if (e.shiftKey) {
@@ -417,85 +498,95 @@
         }
       });
 
-      // Update the send button click handler
+      // Send button handler
       sendButton.addEventListener("click", () => {
-    const query = queryInput.value.trim();
-    const modelName = document.getElementById("model-select").value;
-    if (query) {
-      addMessage(query, "user-message");
-      // const loadingMessage = showLoader(modelName);
-      vscode.postMessage({ command: "sendQuery", query, model: modelName });
-      queryInput.value = "";
-      queryInput.style.height = "20px"; // Reset to initial height
-    }
-  });
-
-      // Also update the Enter key handler
+        const query = queryInput.value.trim();
+        const modelName = document.getElementById("model-select").value;
+        if (query) {
+          addMessage(query, "user-message");
+          vscode.postMessage({ command: "sendQuery", query, model: modelName });
+          queryInput.value = "";
+          queryInput.style.height = "20px"; // Reset height
+        }
+      });
       queryInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          if (e.shiftKey) {
-            setTimeout(autoResizeInput, 0);
-          } else {
-            e.preventDefault();
-            sendButton.click();
-            queryInput.style.height = "20px"; // Reset to initial height
-          }
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendButton.click();
+          queryInput.style.height = "20px"; // Reset height
         }
       });
 
-      // In your message event listener:
-      let currentMessage = '';
-      let messageDiv = null;
+      // --- Message Phase Handling ---
 
-      function showLoader(modelName) {
-        const messageDiv = document.createElement("div");
-        messageDiv.className = "message ai-message";
-    
-        const loaderDiv = document.createElement("div");
-        loaderDiv.className = "loader";
-    
-        const modelDiv = document.createElement("div");
-        modelDiv.className = "model-name";
-        modelDiv.textContent = `Generating response with ${modelName}...`;
-    
-        messageDiv.appendChild(loaderDiv);
-        messageDiv.appendChild(modelDiv);
-        chatContainer.appendChild(messageDiv);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        return messageDiv;
-      }
+      let currentPlanMessage = "";
+      let currentCodeMessage = "";
+      let planMessageDiv = null;
+      let codeMessageDiv = null;
 
+      // Show completion by replacing the loader with a checkmark.
       function showCompletion(messageDiv) {
         const checkmarkDiv = document.createElement("div");
         checkmarkDiv.className = "checkmark";
-        messageDiv.replaceChild(checkmarkDiv, messageDiv.querySelector(".loader"));
-        messageDiv.querySelector(".model-name").textContent = "Response generated";
+        const loader = messageDiv.querySelector(".loader");
+        if (loader) {
+          messageDiv.replaceChild(checkmarkDiv, loader);
+        }
+        const modelDiv = messageDiv.querySelector(".model-name");
+        if (modelDiv) {
+          modelDiv.textContent = "Response generated";
+        }
       }
 
+      // Listen for messages from the extension host
       window.addEventListener("message", (event) => {
         const message = event.data;
+        const modelName = document.getElementById("model-select").value;
+
         switch (message.type) {
-          case "chunk":
-            if (!messageDiv) {
-              messageDiv = showLoader(document.getElementById("model-select").value);
+          case "plan_chunk":
+            if (!planMessageDiv) {
+              planMessageDiv = createMessageContainer("plan", modelName);
             }
-            currentMessage += message.message;
-            messageDiv.innerHTML = detectCodeBlocks(currentMessage);
+            currentPlanMessage += message.message;
+            // Update only the content area with formatted markdown
+            planMessageDiv.querySelector(".message-content").innerHTML = formatMarkdown(currentPlanMessage);
             chatContainer.scrollTop = chatContainer.scrollHeight;
             break;
-          case "complete":
-            showCompletion(messageDiv);
-            messageDiv = null;
-            currentMessage = '';
+
+          case "plan_complete":
+            showCompletion(planMessageDiv);
             break;
+
+          case "code_chunk":
+            if (!codeMessageDiv) {
+              codeMessageDiv = createMessageContainer("code", modelName);
+            }
+            currentCodeMessage += message.message;
+            codeMessageDiv.querySelector(".message-content").innerHTML = formatMarkdown(currentCodeMessage);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            break;
+
+          case "code_complete":
+            showCompletion(codeMessageDiv);
+            // Reset for the next round
+            planMessageDiv = null;
+            codeMessageDiv = null;
+            currentPlanMessage = "";
+            currentCodeMessage = "";
+            break;
+
           case "error":
             addMessage(message.message, "error-message");
-            messageDiv = null;
-            currentMessage = '';
+            planMessageDiv = null;
+            codeMessageDiv = null;
+            currentPlanMessage = "";
+            currentCodeMessage = "";
             break;
+
           case "loading":
-            const modelName = document.getElementById("model-select").value;
-            messageDiv = showLoader(modelName);
+            // Optionally create a plan container on loading.
+            planMessageDiv = createMessageContainer("plan", modelName);
             break;
         }
       });
