@@ -28,6 +28,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
         font-family: var(--vscode-font-family);
       }
       #chat-container {
+        position: relative; 
         flex-grow: 1;
         overflow-y: auto;
         margin-bottom: 15px;
@@ -35,6 +36,22 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
         border: 1px solid var(--vscode-input-border);
         border-radius: 8px;
         background: var(--vscode-editor-background);
+      }
+      .new-chat-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      
+      .new-chat-button:hover {
+        background: var(--vscode-button-hoverBackground);
       }
       .message {
         margin: 12px 0;
@@ -190,14 +207,14 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
       }
       /* Scrollbar Styles */
       ::-webkit-scrollbar {
-        width: 2px;
-        height: 2px;
+        width: 1px;
+        height: 1px;
       }
       ::-webkit-scrollbar-track {
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: var(--vscode-scrollbarSlider-hoverBackground);
+        background: transparent;
         border-radius: 2px;
         width: 2px;
       }
@@ -305,7 +322,11 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
     </style>
   </head>
   <body>
+   
+    
     <div id="chat-container">
+       <!-- Add "+ New Chat" button -->
+    <button id="new-chat-button" class="new-chat-button">+ New Chat</button>
       <div class="welcome-message">
         <h2>Welcome to TaskTrace AI</h2>
         <p>
@@ -335,6 +356,22 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-d
       const chatContainer = document.getElementById("chat-container");
       const queryInput = document.getElementById("query-input");
       const sendButton = document.getElementById("send-button");
+      const newChatButton = document.getElementById("new-chat-button");
+
+      // Function to reset the chat view
+      function resetChatView() {
+        chatContainer.innerHTML = `
+          <div class="welcome-message">
+            <h2>Welcome to TaskTrace AI</h2>
+            <p>
+              Your intelligent coding companion. Ask questions about your code or get help with programming tasks.
+            </p>
+          </div>`;
+        queryInput.value = "";
+      }
+
+      // Add event listener to "+ New Chat" button
+      newChatButton.addEventListener("click", resetChatView);
 
       // --- Helper Functions ---
 
