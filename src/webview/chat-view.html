@@ -1,6 +1,10 @@
 <!doctype html>
 <html>
   <head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.12/marked.min.js"></script>
     <style>
       body {
         padding: 15px;
@@ -121,8 +125,40 @@
       }
       .code-block pre {
         margin: 0;
-        white-space: pre-wrap;
-        overflow-x: auto;
+        padding: 0;
+      }
+      .code-block code {
+        font-family: var(--vscode-editor-font-family);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .language-label {
+        position: absolute;
+        top: 4px;
+        right: 40px;
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.7;
+      }
+
+      /* Markdown text styles */
+      .markdown-content strong {
+        color: var(--vscode-editor-foreground);
+        font-weight: 600;
+      }
+
+      .markdown-content em {
+        font-style: italic;
+        color: var(--vscode-textPreformat-foreground);
+      }
+
+      .markdown-content code:not(pre code) {
+        background: var(--vscode-textCodeBlock-background);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: var(--vscode-editor-font-family);
+        font-size: 0.9em;
       }
       .copy-button {
         position: absolute;
@@ -185,11 +221,39 @@
         id="query-input"
         placeholder="Type your query here... (Shift + Enter for new line)"
       ></textarea>
-      <button id="send-button">
-        <span class="codicon codicon-send"></span>
-        Send
-      </button>
+      <div class="button-container">
+        <select id="model-select" class="model-selector">
+          <option value="gemini-1.5-pro">Gemini 1.5 Flash</option>
+          <option value="deepseek-r1">DeepSeek R1</option>
+        </select>
+        <button id="send-button">
+          <span class="codicon codicon-send"></span>
+          Send
+        </button>
+      </div>
     </div>
+
+    <style>
+      .button-container {
+        display: flex;
+        gap: 8px;
+        align-self: flex-end;
+      }
+
+      .model-selector {
+        padding: 6px 10px;
+        border-radius: 4px;
+        background: var(--vscode-dropdown-background);
+        color: var(--vscode-dropdown-foreground);
+        border: 1px solid var(--vscode-dropdown-border);
+        cursor: pointer;
+      }
+
+      .model-selector:focus {
+        outline: none;
+        border-color: var(--vscode-focusBorder);
+      }
+    </style>
     <script>
       const vscode = acquireVsCodeApi();
       const chatContainer = document.getElementById("chat-container");
@@ -198,7 +262,8 @@
 
       function formatCodeBlock(code, language = "") {
         return `<div class="code-block">
-                <pre><code class="${language}">${escapeHtml(code)}</code></pre>
+                <span class="language-label">${language}</span>
+                <pre><code class="language-${language}">${escapeHtml(code)}</code></pre>
                 <button class="copy-button">Copy</button>
             </div>`;
       }
@@ -228,42 +293,63 @@
         return formattedContent;
       }
 
+      function formatMarkdown(content) {
+          // Configure marked options
+          marked.setOptions({
+              highlight: function(code, lang) {
+                  if (Prism.languages[lang]) {
+                      return Prism.highlight(code, Prism.languages[lang], lang);
+                  }
+                  return code;
+              }
+          });
+      
+          return marked(content);
+      }
+
       function addMessage(content, type) {
         const messageDiv = document.createElement("div");
         messageDiv.className = `message ${type}`;
-
+      
         if (type === "ai-message") {
-          messageDiv.innerHTML = detectCodeBlocks(content);
-          messageDiv.classList.add("success-message");
-        } else {
+          // Process markdown and code blocks
+          const formattedContent = formatMarkdown(content);
+          messageDiv.innerHTML = formattedContent;
+          messageDiv.classList.add("success-message", "markdown-content");
+          
+          // Highlight all code blocks
+          messageDiv.querySelectorAll('pre code').forEach((block) => {
+              Prism.highlightElement(block);
+          });
+      } else {
           messageDiv.textContent = content;
-        }
-
-        if (chatContainer.querySelector(".welcome-message")) {
+      }
+      
+      if (chatContainer.querySelector(".welcome-message")) {
           chatContainer.innerHTML = "";
-        }
-
-        chatContainer.appendChild(messageDiv);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-
-        // Add copy functionality to code blocks
-        messageDiv.querySelectorAll(".copy-button").forEach((button) => {
+      }
+      
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      
+      // Add copy functionality to code blocks
+      messageDiv.querySelectorAll(".copy-button").forEach((button) => {
           button.addEventListener("click", () => {
-            const code = button.previousElementSibling.textContent;
-            navigator.clipboard.writeText(code);
-            button.textContent = "Copied!";
-            setTimeout(() => (button.textContent = "Copy"), 2000);
+              const code = button.previousElementSibling.querySelector("code").textContent;
+              navigator.clipboard.writeText(code);
+              button.textContent = "Copied!";
+              setTimeout(() => (button.textContent = "Copy"), 2000);
           });
-        });
-
-        // Add code snippet selection functionality
-        messageDiv.querySelectorAll(".code-block").forEach((block) => {
+      });
+      
+      // Add code snippet selection functionality
+      messageDiv.querySelectorAll(".code-block").forEach((block) => {
           block.addEventListener("click", (e) => {
-            if (e.target.classList.contains("copy-button")) return;
-            const code = block.querySelector("code").textContent;
-            queryInput.value = code;
+              if (e.target.classList.contains("copy-button")) return;
+              const code = block.querySelector("code").textContent;
+              queryInput.value = code;
           });
-        });
+      });
       }
 
       // Add auto-resize functionality to the input
@@ -317,19 +403,31 @@
         }
       });
 
+      // In your message event listener:
+      let currentMessage = '';
+      let messageDiv = null;
+
       window.addEventListener("message", (event) => {
         const message = event.data;
         switch (message.type) {
-          case "response":
-            // Check if the message starts with "Error"
-            if (message.message.startsWith("Error")) {
-              addMessage(message.message, "error-message");
-            } else {
-              addMessage(message.message, "ai-message");
+          case "chunk":
+            if (!messageDiv) {
+              messageDiv = document.createElement("div");
+              messageDiv.className = "message ai-message";
+              chatContainer.appendChild(messageDiv);
             }
+            currentMessage += message.message;
+            messageDiv.innerHTML = detectCodeBlocks(currentMessage);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            break;
+          case "complete":
+            messageDiv = null;
+            currentMessage = '';
             break;
           case "error":
             addMessage(message.message, "error-message");
+            messageDiv = null;
+            currentMessage = '';
             break;
           case "loading":
             addMessage("Processing your request...", "loading");

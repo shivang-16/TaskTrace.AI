@@ -21,6 +21,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getWebviewContent();
 
+    // In the onDidReceiveMessage handler:
     webviewView.webview.onDidReceiveMessage(async (message) => {
       switch (message.command) {
         case "sendQuery":
@@ -32,30 +33,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             });
             return;
           }
-          // Code snippet selection is optional. If no code is selected,
-          // an empty string will be used for the query
           const selection = editor.selection;
           const code = editor.document.getText(selection);
-          if (!code) {
-            console.log("No code snippet selected, proceeding with empty code");
-          }
           try {
             webviewView.webview.postMessage({ type: "loading" });
-            const response = await vscode.commands.executeCommand(
+            await vscode.commands.executeCommand(
               "tasktrace.processQuery",
               code,
               message.query,
+              message.model // Make sure this is being passed from the webview
             );
-            webviewView.webview.postMessage({
-              type: "response",
-              message: response,
-            });
           } catch (error) {
             console.error("Error processing query:", error);
             webviewView.webview.postMessage({
               type: "error",
-              message:
-                "Failed to process query. Please verify your API key, network connection, and ensure proper query format.",
+              message: "Failed to process query. Please verify your API key and ensure proper query format.",
             });
           }
           break;
@@ -92,5 +84,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 </body>
             </html>
         `;
+  }
+
+  public getWebview(): vscode.Webview | undefined {
+    return this._view?.webview;
   }
 }
