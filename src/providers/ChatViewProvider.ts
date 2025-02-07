@@ -21,7 +21,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getWebviewContent();
 
-    // In the onDidReceiveMessage handler:
+    // Message handler supporting two-phase response system:
+    // Incoming: 'sendQuery' from webview
+    // Outgoing: 
+    // - 'loading': Initial loading state
+    // - 'plan_chunk': Streaming plan response chunks
+    // - 'plan_complete': Plan phase completion
+    // - 'code_chunk': Streaming code response chunks  
+    // - 'code_complete': Code phase completion
+    // - 'error': Error messages
     webviewView.webview.onDidReceiveMessage(async (message) => {
       switch (message.command) {
         case "sendQuery":
@@ -36,6 +44,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
           const selection = editor.selection;
           const code = editor.document.getText(selection);
           try {
+            // Initiate loading state before two-phase response begins
             webviewView.webview.postMessage({ type: "loading" });
             await vscode.commands.executeCommand(
               "tasktrace.processQuery",
@@ -47,7 +56,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             console.error("Error processing query:", error);
             webviewView.webview.postMessage({
               type: "error",
-              message: "Failed to process query. Please verify your API key and ensure proper query format.",
+              message: "Failed to process query. Please verify your API key and ensure proper query format. If the issue persists, check that the API response includes both planning and implementation phases.",
             });
           }
           break;

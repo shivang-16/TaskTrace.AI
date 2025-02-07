@@ -7,7 +7,7 @@ import axios from "axios";
 dotenv.config();
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
 const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function* callDeepseekAPIStream(codeSnippet: string, query: string) {
@@ -18,6 +18,10 @@ async function* callDeepseekAPIStream(codeSnippet: string, query: string) {
       {
         model: "deepseek/deepseek-r1:free",
         messages: [
+          {
+            role: "system",
+            content: "You are an AI assistant that responds in two phases: First, provide a planning phase marked with [PLAN] and end it with [PLAN_COMPLETE]. Then, provide the implementation phase marked with [CODE] and end it with [CODE_COMPLETE]."
+          },
           {
             role: "user",
             content: `Code: ${codeSnippet}\nQuery: ${query}`
@@ -57,7 +61,7 @@ async function* callDeepseekAPIStream(codeSnippet: string, query: string) {
 async function* callGeminiAPIStream(codeSnippet: string, query: string) {
   try {
     console.log("Processing query with Gemini API...");
-    const prompt = `Code: ${codeSnippet}\nQuery: ${query}`;
+    const prompt = `You are an AI assistant that responds in two phases: First, provide a planning phase marked with [PLAN] and end it with [PLAN_COMPLETE]. Then, provide the implementation phase marked with [CODE] and end it with [CODE_COMPLETE].\n\nCode: ${codeSnippet}\nQuery: ${query}`;
     const result = await geminiModel.generateContentStream(prompt);
     
     for await (const chunk of result.stream) {
@@ -94,14 +98,61 @@ export function activate(context: vscode.ExtensionContext) {
         : callGeminiAPIStream(code, query);
 
       try {
+        let currentPhase: 'plan' | 'code' | null = null;
+        let buffer = '';
+
         for await (const chunk of streamGenerator) {
+          buffer += chunk;
+
+          // Check for phase markers
+          if (buffer.includes('[PLAN]')) {
+            currentPhase = 'plan';
+            buffer = buffer.replace('[PLAN]', '');
+          } else if (buffer.includes('[CODE]')) {
+            currentPhase = 'code';
+            buffer = buffer.replace('[CODE]', '');
+            // Signal plan phase completion if transitioning to code
+            webview.postMessage({ type: 'plan_complete' });
+          }
+
+          // Check for phase completion markers
+          if (buffer.includes('[PLAN_COMPLETE]')) {
+            webview.postMessage({
+              type: 'plan_chunk',
+              message: buffer.replace('[PLAN_COMPLETE]', '').trim()
+            });
+            buffer = '';
+            continue;
+          } else if (buffer.includes('[CODE_COMPLETE]')) {
+            webview.postMessage({
+              type: 'code_chunk',
+              message: buffer.replace('[CODE_COMPLETE]', '').trim()
+            });
+            buffer = '';
+            webview.postMessage({ type: 'code_complete' });
+            continue;
+          }
+
+          // Send buffered content if we have a current phase
+          if (currentPhase && buffer.trim()) {
+            webview.postMessage({
+              type: `${currentPhase}_chunk`,
+              message: buffer
+            });
+            buffer = '';
+          }
+        }
+
+        // Handle any remaining buffer content
+        if (buffer.trim()) {
           webview.postMessage({
-            type: "chunk",
-            message: chunk
+            type: `${currentPhase || 'chunk'}_chunk`,
+            message: buffer.trim()
           });
         }
-        // Signal completion
-        webview.postMessage({ type: "complete" });
+        
+        // Signal final completion if not already done
+        webview.postMessage({ type: 'code_complete' });
       } catch (error) {
         webview.postMessage({
           type: "error",
